@@ -1,5 +1,10 @@
 package com.mybank.tui;
 
+import com.mybank.domain.Account;
+import com.mybank.domain.Customer;
+import com.mybank.domain.Bank;
+import com.mybank.domain.CheckingAccount;
+import com.mybank.domain.SavingsAccount;
 import jexer.TAction;
 import jexer.TApplication;
 import jexer.TField;
@@ -10,7 +15,7 @@ import jexer.menu.TMenu;
 
 /**
  *
- * @author Alexander 'Taurus' Babich
+ * @author Sasha
  */
 public class TUIdemo extends TApplication {
 
@@ -25,24 +30,34 @@ public class TUIdemo extends TApplication {
     public TUIdemo() throws Exception {
         super(BackendType.SWING);
 
+        Bank bank = Bank.getBank();
+        bank.addCustomer("John", "Doe");
+        bank.addCustomer("Jane", "Doe");
+
+        Customer john = bank.getCustomer(0);
+        john.addAccount(new CheckingAccount(200.00));
+        Customer jane = bank.getCustomer(1);
+        jane.addAccount(new SavingsAccount(150.00, 0.03));
+
         addToolMenu();
-        //custom 'File' menu
+
+        // custom 'File' menu
         TMenu fileMenu = addMenu("&File");
         fileMenu.addItem(CUST_INFO, "&Customer Info");
         fileMenu.addDefaultItem(TMenu.MID_SHELL);
         fileMenu.addSeparator();
         fileMenu.addDefaultItem(TMenu.MID_EXIT);
-        //end of 'File' menu  
+        // end of 'File' menu
 
         addWindowMenu();
 
-        //custom 'Help' menu
+        // custom 'Help' menu
         TMenu helpMenu = addMenu("&Help");
         helpMenu.addItem(ABOUT_APP, "&About...");
-        //end of 'Help' menu 
+        // end of 'Help' menu
 
         setFocusFollowsMouse(true);
-        //Customer window
+        // Customer window
         ShowCustomerDetails();
     }
 
@@ -71,8 +86,16 @@ public class TUIdemo extends TApplication {
             public void DO() {
                 try {
                     int custNum = Integer.parseInt(custNo.getText());
-                    //details about customer with index==custNum
-                    details.setText("Owner Name: John Doe (id="+custNum+")\nAccount Type: 'Checking'\nAccount Balance: $200.00");
+                    Customer customer = Bank.getBank().getCustomer(custNum);
+                    if (customer != null) {
+                        String ownerName = customer.getFirstName() + " " + customer.getLastName();
+                        Account account = customer.getAccount(0);
+                        String accountType = account instanceof CheckingAccount ? "Checking" : "Savings";
+                        double balance = account.getBalance();
+                        details.setText(String.format("Owner Name: %s\nAccount Type: '%s'\nAccount Balance: $%.2f", ownerName, accountType, balance));
+                    } else {
+                        details.setText("Customer not found.");
+                    }
                 } catch (Exception e) {
                     messageBox("Error", "You must provide a valid customer number!").show();
                 }
